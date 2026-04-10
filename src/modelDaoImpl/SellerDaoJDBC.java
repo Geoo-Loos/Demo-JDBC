@@ -4,7 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jdbc.DB;
 import jdbc.DbException;
@@ -113,6 +116,63 @@ public class SellerDaoJDBC implements SellerDao{
         throw new UnsupportedOperationException("Unimplemented method 'findAll'");
     }
 
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+         PreparedStatement st = null;
+         ResultSet rs = null;
+
+      try {
+        st= conn.prepareStatement(
+          " SELECT seller.*,department.Name as DepName "+
+           "FROM seller INNER JOIN department "+
+            "ON seller.DepartmentId = department.Id "+
+           "WHERE seller.Id = ?"
+        );
+
+        st.setInt(1, department.getId());
+        rs = st.executeQuery();
+
+        List<Seller> list = new ArrayList<>();
+
+        Map<Integer, Department> map = new HashMap<>();
+
+        while(rs.next()){//Vai ver se o dep já existe
+
+           Department dep = map.get(rs.getInt("DepartmentId"));//Esse Map serve para evitar que o programa instancie mais de um departamento, ou seja, se o departamento já tiver sido instanciado ele pega do Map, caso contrário ele instancia e guarda no Map para as próximas vezes que precisar do mesmo departamento.
+
+            if(dep == null){
+                dep= instantiateDepartment(rs);
+                map.put(rs.getInt("DepartmentId"), dep);
+            }
+
+            
+            /*new Department();
+            dep.setId(rs.getInt("DepartmentId"));
+            dep.setName(rs.getString("DepName"));*/
+            
+            Seller obj= instantiateSeller(rs, dep);
+            /*new Seller();
+            obj.setId(rs.getInt("Id"));
+            obj.setName(rs.getString("Name"));
+            obj.setEmail(rs.getString("Email"));
+            obj.setBaseSalary(rs.getDouble("BaseSalary"));
+            obj.setBirthDate(rs.getDate("BirthDate"));
+            obj.setDepartment(dep);*/
+
+            list.add(obj);
+        }
+
+        return list;
+
+      } catch (SQLException e) {
+
+        throw new DbException(e.getMessage());
+
+       } 
+       finally
+        {
+    }
+
 
     
-}
+    }}
